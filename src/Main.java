@@ -1,364 +1,42 @@
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        fillTestData();
-        while (true) {
-            if (Manager.isTaskListEmpty()) {
-                welcomeScreen();
-            } else {
-                workingArea();
-            }
-        }
+        InMemoryTaskManager inMemoryTaskManager = new InMemoryTaskManager();
+        fillTestData(inMemoryTaskManager); // test data
+        inMemoryTaskManager.start();
     }
 
-    private static void welcomeScreen() {
-        System.out.println("[!] Список задач пуст");
-        System.out.println("1 — добавить задачу");
-        System.out.println("0 — выйти");
-        Scanner scanner = new Scanner(System.in);
-        int command = scanner.nextInt();
-        switch (command) {
-            case 1:
-                System.out.println("""
-                        Какую задачу создать?
-                        1 — обычную
-                        2 — с подзадачами
-                        0 — назад""");
-                if (scanner.hasNextInt()) {
-                    command = scanner.nextInt();
-                    switch (command) {
-                        case 1:
-                            Task.create();
-                            break;
-                        case 2:
-                            BigTask.create();
-                            break;
-                        case 0:
-                            printMessageGoBack();
-                            return;
-                        default:
-                            printErrorOfCommandInput();
-                    }
-                } else {
-                    printErrorOfInputOfCommandType();
-                }
-                break;
-            case 0:
-                System.out.println("Программа завершена");
-                System.exit(0);
-        }
-    }
-
-    private static void workingArea() {
-        Manager.printAllTasks();
-        menu();
-    }
-
-    public static void menu() {
-        while (true) {
-            System.out.println("Введите:\n" +
-                    "номер id[] — вызвать меню задачи\n" +
-                    "m — вызвать меню программы\n" +
-                    "t — создать задачу\n" +
-                    "q — выйти");
-            Scanner scanner = new Scanner(System.in);
-            if (scanner.hasNextInt()) {
-                int id = scanner.nextInt();
-                if (id > 0 && id <= Manager.idCounter) {
-                    taskMenu(id);
-                    break;
-                } else if (id > Manager.idCounter) {
-                    System.out.println("[!] Нет задачи с таким id[]");
-                } else {
-                    System.out.println("[!] Нужно ввести целое число больше 0");
-                }
-            } else {
-                String command = scanner.nextLine();
-                switch (command) {
-                    case "m":
-                        Manager.settings();
-                        return;
-                    case "t":
-                        Manager.createTask();
-                        return;
-                    case "q":
-                        System.out.println("Завершение программы");
-                        System.exit(0);
-                    default:
-                        printErrorOfCommandInput();
-                }
-            }
-        }
-    }
-
-    private static void taskMenu(int id) {
-        if (Task.tasks.containsKey(id)) {
-            Task task = Task.tasks.get(id);
-            switch (task.status) {
-                case NEW:
-                    while (true) {
-                        Task.print(task, false, true);
-                        System.out.println("""
-                                ЧТО СДЕЛАТЬ С ЭТОЙ ЗАДАЧЕЙ?
-                                1 — перенести в подзадачи к другой задаче
-                                2 — удалить
-                                3 — пометить взятой на выполнение
-                                4 — пометить завершённой
-                                5 — выйти из меню задачи""");
-                        Scanner scanner = new Scanner(System.in);
-                        if (scanner.hasNextInt()) {
-                            int command = scanner.nextInt();
-                            switch (command) {
-                                case 1:
-                                    Task.convertToSubtask(task);
-                                    return;
-                                case 2:
-                                    Task.delete(task);
-                                    return;
-                                case 3:
-                                    Task.take(task);
-                                    return;
-                                case 4:
-                                    Task.complete(task);
-                                    return;
-                                case 5:
-                                    Main.printMessageGoBack();
-                                    return;
-                                default:
-                                    Main.printErrorOfInputOfCommandType();
-                            }
-                        } else {
-                            Main.printErrorOfInputOfCommandType();
-                        }
-                    }
-                case IN_PROCESS:
-                    while (true) {
-                        Task.print(task, false, true);
-                        System.out.println("""
-                                ЧТО СДЕЛАТЬ С ЭТОЙ ЗАДАЧЕЙ?
-                                1 — перенести в подзадачи к другой задаче
-                                2 — удалить
-                                3 — пометить завершённой
-                                4 — выйти из меню задачи""");
-                        Scanner scanner = new Scanner(System.in);
-                        if (scanner.hasNextInt()) {
-                            int command = scanner.nextInt();
-                            switch (command) {
-                                case 1:
-                                    Task.convertToSubtask(task);
-                                    return;
-                                case 2:
-                                    Task.delete(task);
-                                    return;
-                                case 3:
-                                    Task.complete(task);
-                                    return;
-                                case 4:
-                                    Main.printMessageGoBack();
-                                    return;
-                                default:
-                                    Main.printErrorOfInputOfCommandType();
-                            }
-                        } else {
-                            Main.printErrorOfInputOfCommandType();
-                        }
-                    }
-                case DONE:
-                    while (true) {
-                        Task.print(task, false, true);
-                        System.out.println("""
-                                ЧТО СДЕЛАТЬ С ЭТОЙ ЗАДАЧЕЙ?
-                                1 — удалить
-                                2 — вернуть задаче статус взятой на выполнение
-                                3 — выйти из меню задачи""");
-                        Scanner scanner = new Scanner(System.in);
-                        if (scanner.hasNextInt()) {
-                            int command = scanner.nextInt();
-                            switch (command) {
-                                case 1:
-                                    Task.delete(task);
-                                    return;
-                                case 2:
-                                    Task.take(task);
-                                    return;
-                                case 3:
-                                    Main.printMessageGoBack();
-                                    return;
-                                default:
-                                    Main.printErrorOfInputOfCommandType();
-                            }
-                        } else {
-                            Main.printErrorOfInputOfCommandType();
-                        }
-                    }
-            }
-        } else if (BigTask.bigTasks.containsKey((id))) {
-            BigTask bigTask = BigTask.bigTasks.get(id);
-            BigTask.print(bigTask, false, true);
-            while (true) {
-                System.out.println("""
-                        ЧТО СДЕЛАТЬ С ЭТОЙ ЗАДАЧЕЙ B ЕЁ ПОДЗАДАЧАМИ?
-                        1 — удалить
-                        2 — добавить подзадачу
-                        0 — выйти из меню задачи""");
-                Scanner scanner = new Scanner(System.in);
-                if (scanner.hasNextInt()) {
-                    int command = scanner.nextInt();
-                    switch (command) {
-                        case 1:
-                            BigTask.delete(bigTask);
-                            return;
-                        case 2:
-                            Subtask.create(bigTask.id);
-                            return;
-                        case 0:
-                            Main.printMessageGoBack();
-                            return;
-                        default:
-                            Main.printErrorOfInputOfCommandType();
-                    }
-                } else {
-                    Main.printErrorOfInputOfCommandType();
-                }
-            }
-        } else if (Subtask.subtasks.containsKey(id)) {
-            Subtask subtask = Subtask.subtasks.get(id);
-            subtask.print(subtask, false, true);
-            switch (subtask.status) {
-                case NEW:
-                    while (true) {
-                        System.out.println("""
-                                ЧТО СДЕЛАТЬ С ЭТОЙ ЗАДАЧЕЙ?
-                                 1 — удалить
-                                 2 — пометить взятой на выполнение
-                                 3 — пометить завершённой
-                                 4 — выйти из меню задачи""");
-                        Scanner scanner = new Scanner(System.in);
-                        if (scanner.hasNextInt()) {
-                            int command = scanner.nextInt();
-                            switch (command) {
-                                case 1:
-                                    Subtask.delete(subtask);
-                                    return;
-                                case 2:
-                                    Subtask.take(subtask);
-                                    return;
-                                case 3:
-                                    Subtask.complete(subtask);
-                                    return;
-                                case 4:
-                                    Main.printMessageGoBack();
-                                    return;
-                                default:
-                                    Main.printErrorOfInputOfCommandType();
-                            }
-                        } else {
-                            Main.printErrorOfInputOfCommandType();
-                        }
-                    }
-                case IN_PROCESS:
-                    while (true) {
-                        System.out.println("""
-                                ЧТО СДЕЛАТЬ С ЭТОЙ ЗАДАЧЕЙ?
-                                1 — удалить
-                                2 — пометить завершённой
-                                3 — выйти из меню задачи""");
-                        Scanner scanner = new Scanner(System.in);
-                        if (scanner.hasNextInt()) {
-                            int command = scanner.nextInt();
-                            switch (command) {
-                                case 1:
-                                    Subtask.delete(subtask);
-                                    return;
-                                case 2:
-                                    Subtask.complete(subtask);
-                                    return;
-                                case 4:
-                                    Main.printMessageGoBack();
-                                    return;
-                                default:
-                                    Main.printErrorOfInputOfCommandType();
-                            }
-                        } else {
-                            Main.printErrorOfInputOfCommandType();
-                        }
-                    }
-                case DONE:
-                    while (true) {
-                        System.out.println("""
-                                ЧТО СДЕЛАТЬ С ЭТОЙ ЗАДАЧЕЙ?
-                                1 — удалить
-                                2 — вернуть задаче статус взятой на выполнение
-                                3 — выйти из меню задачи""");
-                        Scanner scanner = new Scanner(System.in);
-                        if (scanner.hasNextInt()) {
-                            int command = scanner.nextInt();
-                            switch (command) {
-                                case 1:
-                                    Subtask.delete(subtask);
-                                    return;
-                                case 2:
-                                    Subtask.take(subtask);
-                                    return;
-                                case 3:
-                                    Main.printMessageGoBack();
-                                    return;
-                                default:
-                                    Main.printErrorOfInputOfCommandType();
-                            }
-                        } else {
-                            Main.printErrorOfInputOfCommandType();
-                        }
-                    }
-            }
-        }
-    }
-
-    private static void fillTestData() {
-        BigTask task1 = new BigTask(1, "Улучшить сайт", "", Task.Status.NEW, new ArrayList<>());
-        BigTask.bigTasks.put(task1.id, task1);
-
-        Subtask task2 = new Subtask(1, 2, "Внести исправления в функционал личного кабинета", "Cписок правок — в корпоративном облаке (папка «Очередь правок на сайт»)", Task.Status.NEW);
-        Subtask.subtasks.put(task2.id, task2);
-        task1.subtasks.add(task2);
-
-        Task task3 = new Task(3, "Проанализировать цены на офисные стеллажи", "", Task.Status.NEW);
-        Task.tasks.put(task3.id, task3);
-
-        Task task4 = new Task(4, "Купить офисные кресла", "20 шт. с подлокотниками и эргономичной спинкой", Task.Status.NEW);
-        Task.tasks.put(task4.id, task4);
-
-        BigTask task5 = new BigTask(5, "Заключить договор 143", "", Task.Status.NEW, new ArrayList<>());
-        BigTask.bigTasks.put(task5.id, task5);
-
-        Subtask task6 = new Subtask(5, 6, "Уладить разногласия", "", Task.Status.NEW);
-        Subtask.subtasks.put(task6.id, task6);
-        task5.subtasks.add(task6);
-
-        Subtask task7 = new Subtask(5, 7, "Подписать договор", "", Task.Status.NEW);
-        Subtask.subtasks.put(task7.id, task7);
-        task5.subtasks.add(task7);
-
-        Manager.idCounter = 8;
-    }
-
-    static void printErrorOfCommandInput() {
-        System.out.println("[!] Нужно ввести команду из предложенных");
-    }
-
-    static void printErrorOfInputOfCommandType() {
-        System.out.println("[!] Команду нужно вводить целым числом");
-    }
-
-    static void printMessageGoBack() {
-        System.out.println("↓ возврат");
-    }
-
-    static void pause() {
-        System.out.println("Нажмите Enter, чтобы продолжить");
-        Scanner scanner = new Scanner(System.in);
-        String command = scanner.nextLine();
+    private static void fillTestData(InMemoryTaskManager inMemoryTaskManager) {
+        inMemoryTaskManager.lineTasks.put(1, new LineTask(1, "Отправить презентацию Святославу",
+                "@svyat_svyat_svyat", Status.NEW));
+        inMemoryTaskManager.lineTasks.put(2, new LineTask(2, "Исправить баг с изменением пароля",
+                "", Status.NEW));
+        inMemoryTaskManager.lineTasks.put(3, new LineTask(3, "Созвониться по видео с новенькими в команде",
+                "", Status.NEW));
+        inMemoryTaskManager.bigTasks.put(4, new BigTask(4, "Подготовить ТЗ", "",
+                new ArrayList<>(), Status.NEW));
+        BigTask bigTask = inMemoryTaskManager.bigTasks.get(4);
+        Subtask subtask = new Subtask(4, 5, "Написать текст ТЗ",
+                "Что сделать, требования, ресурсы, в каком виде нужен результат", Status.NEW);
+        bigTask.subtasks.add(subtask);
+        inMemoryTaskManager.subtasks.put(subtask.id, subtask);
+        subtask = new Subtask(4, 6, "Собрать ресурсы в помощь", "Тексты, дизайн, референсы",
+                Status.NEW);
+        bigTask.subtasks.add(subtask);
+        inMemoryTaskManager.subtasks.put(subtask.id, subtask);
+        inMemoryTaskManager.bigTasks.put(7, new BigTask(7, "Создать страницу продукта", "",
+                new ArrayList<>(), Status.NEW));
+        bigTask = inMemoryTaskManager.bigTasks.get(7);
+        subtask = new Subtask(7, 8, "Создать макет страницы", "", Status.NEW);
+        bigTask.subtasks.add(subtask);
+        inMemoryTaskManager.subtasks.put(subtask.id, subtask);
+        subtask = new Subtask(7, 9, "Подготовить тексты и изображения", "", Status.NEW);
+        bigTask.subtasks.add(subtask);
+        inMemoryTaskManager.subtasks.put(subtask.id, subtask);
+        subtask = new Subtask(7, 10, "Сверстать страницу", "", Status.NEW);
+        bigTask.subtasks.add(subtask);
+        inMemoryTaskManager.subtasks.put(subtask.id, subtask);
+        inMemoryTaskManager.idCounter = 13;
     }
 }
